@@ -1,4 +1,5 @@
 /* USER CODE BEGIN Header */
+/*Este programa tiene como finalidad hacer un contador de 4 dígitos en binario y en decimal haciendo uso de un nucleo*/
 /**
   ******************************************************************************
   * @file           : main.c
@@ -42,6 +43,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+/*Se definen las variables de contador y estado que se utilizaran para transicionar y encender los diferentes leds en los modos de funcionamiento establecidos */
 int contador = 0;
 int estado = 0;
 
@@ -57,7 +59,7 @@ GPIO_PinState antes_suma = 0;
 GPIO_PinState antes_resta = 0;
 GPIO_PinState antes_estado = 0;
 
-/*Se establecen las variables del estado del botón actuañl*/
+/*Se establecen las variables del estado del botón actual*/
 
 GPIO_PinState estado_suma = GPIO_PIN_RESET;
 GPIO_PinState estado_resta = GPIO_PIN_RESET;
@@ -69,7 +71,7 @@ GPIO_PinState estado_cambio = GPIO_PIN_RESET;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+/* Se agregan los prototipos de las funciones de debounce utilizadas para los tres botones*/
 GPIO_PinState debounce_s(void);
 GPIO_PinState debounce_r(void);
 GPIO_PinState debounce_c(void);
@@ -118,10 +120,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	 /*Se llaman las funciones de debounce para evitar el rebote al presionar el botón*/
 	  debounce_s();
 	  debounce_r();
 	  debounce_c();
-
+	/*Se definen las variables suma, resta y cambio las cuales se les asigna el valor lógico que se obtiene al presionar el botón. 
+ 	el ciclo if comprueba el estado y asigna el modo de funcionamiento o suma y resta dependiendo de lo que sea necesario. Los botones de suma y cambio 
+  	se colocan con el parametro set debido a que tienen naturaleza pulldown y el botón de resta con reset al ser pullup*/
 	  int suma = HAL_GPIO_ReadPin(SUMA_GPIO_Port, SUMA_Pin);
 	  int resta = HAL_GPIO_ReadPin(RESTA_GPIO_Port, RESTA_Pin);
 	  int cambio = HAL_GPIO_ReadPin(CAMBIO_GPIO_Port, CAMBIO_Pin);
@@ -146,6 +151,8 @@ int main(void)
 			contador = 0;
 		}
 	  }
+	  /*Si el valor de estado es cero se realiza la cuenta en binario. Los if's anidados comparan el valor de la variable contador y encienden el o los leds necesarios para 
+   	  representar esta cantidad en binario*/
 	  if(estado == 0){
 		if(contador == 0){
 			HAL_GPIO_WritePin(GPIOB,LED_1_Pin, GPIO_PIN_RESET);
@@ -260,6 +267,7 @@ int main(void)
 			HAL_Delay(100);
 		}
 	  }
+	  /*Si el valor de estado es 1, el contador está en binario y se enciende la led del número que la variable contador posee*/
 	  if(estado == 1){
 		if(contador == 0){
 			HAL_GPIO_WritePin(GPIOB,LED_1_Pin, GPIO_PIN_RESET);
@@ -401,7 +409,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : CAMBIO_Pin */
   GPIO_InitStruct.Pin = CAMBIO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN; //se modificó esta a pulldown aunque originalmente tenía una resistencia para lograr esto. La resistencia no funcionó entonces se colocó la configuración interna. 
   HAL_GPIO_Init(CAMBIO_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -409,13 +417,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+//Funciones de debounce para los distintos botones elegidos, la función compara el estado actual con el previo y se asgura de que hayan pasado 200ms para evitar que exista un rebote en la lectura
 GPIO_PinState debounce_s(void){
 	GPIO_PinState actual = HAL_GPIO_ReadPin(SUMA_GPIO_Port, SUMA_Pin);
 	if(actual != antes_suma){
 		tiempoDebounce_suma = HAL_GetTick();
 	}
 
-	if((HAL_GetTick() - tiempoDebounce_suma) > 50){
+	if((HAL_GetTick() - tiempoDebounce_suma) > 200){
 		if(actual != antes_suma){
 			antes_suma = actual;
 		}
@@ -428,7 +437,7 @@ GPIO_PinState debounce_r(void){
 		tiempoDebounce_resta = HAL_GetTick();
 	}
 
-	if((HAL_GetTick() - tiempoDebounce_resta) > 50){
+	if((HAL_GetTick() - tiempoDebounce_resta) > 2000){
 		if(actual != antes_resta){
 			antes_resta = actual;
 		}
